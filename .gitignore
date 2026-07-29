@@ -1,0 +1,59 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Models (large binary files)
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.h5
+
+# HuggingFace cache
+.cache/
+
+# Results / checkpoints
+results/
+saves/
+merged_student_model/
+merged_student_model_epoch_*/
+
+# Frontend
+frontend/dist/
+frontend/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (keep structure, ignore generated splits)
+data/train_data/
+*.pyc
+*.pt
+*.pth
+*.bin
+*.safetensors
+models/
+results/
+logs/
+.env
+.vscode/
+.idea/
+*.log
