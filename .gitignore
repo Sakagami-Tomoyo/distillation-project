@@ -8,8 +8,7 @@ __pycache__/
 dist/
 build/
 
-# Models (large binary files)
-models/
+# Model binary files (keep configs)
 *.safetensors
 *.bin
 *.pt
@@ -20,15 +19,12 @@ models/
 # HuggingFace cache
 .cache/
 
-# Results / checkpoints
-results/
-saves/
-merged_student_model/
-merged_student_model_epoch_*/
+# Outputs (训练产出)
+outputs/
 
 # Frontend
-frontend/dist/
-frontend/node_modules/
+src/frontend/dist/
+src/frontend/node_modules/
 
 # IDE
 .vscode/
@@ -45,15 +41,7 @@ Thumbs.db
 
 # Data (keep structure, ignore generated splits)
 data/train_data/
-*.pyc
-*.pt
-*.pth
-*.bin
-*.safetensors
-models/
-results/
-logs/
-.env
-.vscode/
-.idea/
+
+# Logs
 *.log
+logs/
