@@ -11,9 +11,9 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 
-from config import SERVER_CONFIG, FRONTEND_DIR
+from backend.config import SERVER_CONFIG, FRONTEND_DIR, GENERATION_CONFIG
 from config_shared import HF_TOKEN  # noqa: F401
-from model_manager import ModelManager
+from backend.model_manager import ModelManager
 
 logging.basicConfig(
     level=logging.INFO,

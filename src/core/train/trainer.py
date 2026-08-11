@@ -31,11 +31,10 @@ LAYER_MATCHES = [
     (4, 6), (8, 12), (12, 18), (16, 24), (20, 30), (23, 35),
 ]
 
-STOP_STRINGS = ["\nHuman:", "\nHuman:\n", "\nuser:", "\nUser:", "<|im_start|>"]
+from config_shared import STOP_STRINGS
 
 
 def _trim_stop_strings(text: str) -> str:
-    """截断文本中首次出现的 stop string 及其之后的内容。"""
     for s in STOP_STRINGS:
         idx = text.find(s)
         if idx != -1:

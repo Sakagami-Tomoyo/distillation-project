@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from transformers import AutoTokenizer
 
-from config_shared import DATA_PATHS, MODEL_PATHS
+from config_shared import DATA_PATHS, MODEL_PATHS, SYSTEM_PROMPT
 from core.train.config import DATASET_CONFIG
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ def build_splits(
                     answer = "".join(answer)
 
                 full_answer = f"答案: {answer}\n解析: {analysis}"
-                prompt = f"题目： {question}"
+                prompt = f"{SYSTEM_PROMPT}；题目：{question}"
 
                 total_text = prompt + full_answer
                 token_count = len(tokenizer.encode(total_text, add_special_tokens=False))

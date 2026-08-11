@@ -13,9 +13,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from config import GENERATION_CONFIG
+from backend.config import GENERATION_CONFIG
 from config_shared import MODEL_PATHS, MODEL_LOAD_CONFIG
-from generator import generate_response
+from backend.generator import generate_response
 
 logging.basicConfig(
     level=logging.INFO,

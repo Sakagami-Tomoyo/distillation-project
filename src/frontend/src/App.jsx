@@ -15,8 +15,10 @@ function renderContent(text) {
   const MATH_PLACEHOLDER = '%%MATH_%d%%'
   let html = text
 
-  // 修复双反斜杠：\\frac → \frac（模型可能输出 JSON 转义风格的 LaTeX）
+  // 修复双反斜杠：\\frac → \frac（先做，避免和 \n 冲突）
   html = html.replace(/\\\\/g, '\\')
+  // 修复字面 \n → 真正换行（JSON 双重转义，但不破坏 LaTeX 的 \\）
+  html = html.replace(/(?<!\\)\\n/g, '\n')
 
   // 预处理：统一 LaTeX 分隔符
   html = html.replace(/\\\(([\s\S]+?)\\\)/g, (_, f) => `$${f.trim()}$`)
@@ -317,7 +319,7 @@ function App() {
           <section className="results-section">
             <div className="question-card">
               <div className="question-header">📋 题目</div>
-              <div className="question-content">{submittedQuestion}</div>
+              <div className="question-content" dangerouslySetInnerHTML={{ __html: renderContent(submittedQuestion) }} />
             </div>
 
             <h2 className="results-title">回答结果</h2>

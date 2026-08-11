@@ -45,3 +45,6 @@ data/train_data/
 # Logs
 *.log
 logs/
+
+# LLaMA-Factory
+LLaMA-Factory/

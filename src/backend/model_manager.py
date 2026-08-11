@@ -15,8 +15,9 @@ import torch
 from transformers import TextIteratorStreamer
 
 from loader import ModelLoader
-from generator import make_chat_prompt
-from config import GENERATION_CONFIG, STOP_STRINGS
+from backend.generator import make_chat_prompt
+from backend.config import GENERATION_CONFIG
+from config_shared import STOP_STRINGS
 from config_shared import PROJECT_ROOT
 
 logger = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ class ModelManager:
     # ------------------------------------------------------------------
 
     def list_checkpoints(self) -> List[Dict[str, str]]:
-        """扫描 merged/ 目录（含 sft/ 和 distillation/），返回所有可用的合并模型。"""
+        """扫描 merged/ 目录，返回所有可用的合并模型。"""
         merged_root = os.path.join(PROJECT_ROOT, "outputs", "merged")
         if not os.path.exists(merged_root):
             return []
@@ -94,7 +95,6 @@ class ModelManager:
                 full = os.path.join(cat_dir, name)
                 if not os.path.isdir(full):
                     continue
-                # 完整模型有 config.json，LoRA checkpoint 只有 adapter_config.json
                 if os.path.exists(os.path.join(full, "config.json")):
                     checkpoints.append({"name": f"{category}/{name}", "path": full})
 
@@ -104,14 +104,11 @@ class ModelManager:
     def get_or_load_checkpoint(self, checkpoint_name: str):
         """获取或按需加载指定的合并模型（线程安全，带缓存）。
 
-        直接从 merged/ 目录加载完整模型，无需 LoRA 合并，速度更快。
-
         checkpoint_name 格式: "sft/merged-sft-epoch_3" 或 "distillation/merged-distill-epoch_0"
         """
         if checkpoint_name in self._checkpoints:
             return self._checkpoints[checkpoint_name]
 
-        # 解析路径
         if "/" not in checkpoint_name:
             for cat in ["sft", "distillation"]:
                 candidate = os.path.join(PROJECT_ROOT, "outputs", "merged", cat, checkpoint_name)

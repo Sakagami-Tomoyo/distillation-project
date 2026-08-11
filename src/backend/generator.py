@@ -9,7 +9,8 @@ from typing import List, Dict, Any, Optional
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-from config import GENERATION_CONFIG, STOP_STRINGS, SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+from config_shared import SYSTEM_PROMPT, STOP_STRINGS
+from backend.config import GENERATION_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ def generate_response(
     device = next(model.parameters()).device
 
     messages: List[Dict[str, str]] = [
-        {"role": "system", "content": "你是一位高考解题助手。"},
+        {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": prompt},
     ]
     text = tokenizer.apply_chat_template(
@@ -54,15 +55,3 @@ def generate_response(
     return response
 
 
-def make_chat_prompt(
-    tokenizer: PreTrainedTokenizer,
-    question: str,
-) -> str:
-    """构建单轮对话提示（与训练格式一致）。"""
-    messages = [
-        {"role": "system", "content": "你是一位高考解题助手。"},
-        {"role": "user", "content": question},
-    ]
-    return tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True,
-    )
