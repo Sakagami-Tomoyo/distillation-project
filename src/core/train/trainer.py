@@ -152,7 +152,7 @@ class KGTrainer(Trainer):
 
         current_epoch = int(self.state.epoch) if self.state.epoch else 0
         mode = getattr(self, "mode", "sft" if self.teacher_model is None else "distillation")
-        prefix_map = {"sft": "sft", "distillation": "distillation", "teacher-sft": "teacher"}
+        prefix_map = {"sft": "sft", "distillation": "distillation"}
         prefix = prefix_map.get(mode, "sft")
         logger.info("Epoch %d/%d [%s] — saving model...", current_epoch, self.args.num_train_epochs, mode)
 

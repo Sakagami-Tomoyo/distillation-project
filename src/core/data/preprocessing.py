@@ -104,9 +104,10 @@ def build_splits(
                     answer = "".join(answer)
 
                 full_answer = f"答案: {answer}\n解析: {analysis}"
-                prompt = f"{SYSTEM_PROMPT}；题目：{question}"
+                instruction = SYSTEM_PROMPT
+                input_text = question
 
-                total_text = prompt + full_answer
+                total_text = instruction + input_text + full_answer
                 token_count = len(tokenizer.encode(total_text, add_special_tokens=False))
 
                 if token_count > max_token_length:
@@ -117,8 +118,9 @@ def build_splits(
                     continue
 
                 entry = {
-                    "prompt": prompt,
-                    "answer": full_answer,
+                    "instruction": instruction,
+                    "input": input_text,
+                    "output": full_answer,
                     "year": year,
                     "subject": extract_subject(os.path.basename(json_file)),
                     "source": os.path.basename(json_file),

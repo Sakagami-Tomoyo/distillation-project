@@ -320,7 +320,7 @@ def main():
     if not args.skip_student:
         logger.info("=== Phase 1: 学生生成（4 个温度 × %d 题）===", len(all_data))
         for idx, item in enumerate(all_data):
-            q = item.get("prompt", item.get("question", ""))
+            q = item.get("input") or item.get("prompt") or item.get("question", "")
             logger.info("[%d/%d] %s", idx+1, len(all_data), q[:80])
             student_all[q] = student_generate_answers(
                 student_model, tokenizer, q, STUDENT_GEN_COUNT)
@@ -343,7 +343,7 @@ def main():
     if not args.skip_teacher:
         logger.info("=== Phase 2 & 3: DeepSeek-V4 批改 + 生成修正数据 ===")
         for idx, item in enumerate(all_data):
-            q = item.get("prompt", item.get("question", ""))
+            q = item.get("input") or item.get("prompt") or item.get("question", "")
             student_answers = student_all.get(q, [])
             if not student_answers:
                 continue

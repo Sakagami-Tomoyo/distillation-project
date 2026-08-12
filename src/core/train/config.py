@@ -18,7 +18,7 @@ DATASET_CONFIG = {
 }
 
 LORA_CONFIG = {
-    "r": 16,
+    "r": 4,
     "lora_alpha": 32,
     "target_modules": [
         "q_proj", "k_proj", "v_proj", "o_proj",

@@ -55,3 +55,15 @@ def generate_response(
     return response
 
 
+def make_chat_prompt(tokenizer: PreTrainedTokenizer, question: str) -> str:
+    """构建推理 prompt：system + 题目，与训练数据 instruction/input 格式一致。"""
+    from config_shared import SYSTEM_PROMPT
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": question},
+    ]
+    return tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True,
+    )
+
+
