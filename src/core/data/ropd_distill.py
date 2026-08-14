@@ -107,7 +107,7 @@ CORRECTION_INSTRUCTION = """你是一位高考解题教练。下面有一道题�
 
 def call_deepseek(messages: List[Dict], temperature: float = 0.7, label: str = "") -> str:
     import requests
-    logger.info("  🌐 调用 DeepSeek API %s ...", label)
+    logger.info("  调用 DeepSeek API %s ...", label)
     resp = requests.post(
         f"{DEEPSEEK_BASE_URL}/v1/chat/completions",
         headers={"Authorization": f"Bearer {DEEPSEEK_API_KEY}",

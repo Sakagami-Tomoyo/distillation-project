@@ -1,0 +1,12 @@
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "9 号项目的预算金额是多少？", "output": {"tool": "query_project_status", "parameters": {"project_id": "9", "field": "cost"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "24 号项目在哪里施工？", "output": {"tool": "query_project_status", "parameters": {"project_id": "24", "field": "address"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "项目 3 现在的审核状态？", "output": {"tool": "query_project_status", "parameters": {"project_id": "3", "field": "status"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "苏E-B-00002 的制造商是哪家？", "output": {"tool": "query_device_info", "parameters": {"device_no": "苏E-B-00002", "field": "manufacturer"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "苏E-M-00003 这台机器人运行状态如何？", "output": {"tool": "query_device_info", "parameters": {"device_no": "苏E-M-00003", "field": "online_status"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "苏E-B-00002 的序列号是多少？", "output": {"tool": "query_device_info", "parameters": {"device_no": "苏E-B-00002", "field": "serial_no"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "查询项目 21 的完整信息。", "output": {"tool": "query_project_status", "parameters": {"project_id": "21"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "苏E-M-00001 在 2024 年 2 月的维保记录。", "output": {"tool": "query_maintenance_record", "parameters": {"device_no": "苏E-M-00001", "year": "2024", "month": "2"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "项目 9 的审核历程。", "output": {"tool": "query_project_review", "parameters": {"project_id": "9"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "苏E-T-00001 的档案信息。", "output": {"tool": "query_device_info", "parameters": {"device_no": "苏E-T-00001"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "8 号项目为什么被驳回？", "output": {"tool": "query_project_status", "parameters": {"project_id": "8", "field": "reject_reason"}}}
+{"instruction": "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，并提取所需的参数，以 JSON 格式输出。", "input": "苏E-M-00002 上次在线时间。", "output": {"tool": "query_device_info", "parameters": {"device_no": "苏E-M-00002", "field": "last_online_at"}}}

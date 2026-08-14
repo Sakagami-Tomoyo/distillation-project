@@ -14,6 +14,8 @@ from fastapi.responses import FileResponse, StreamingResponse
 from backend.config import SERVER_CONFIG, FRONTEND_DIR, GENERATION_CONFIG
 from config_shared import HF_TOKEN  # noqa: F401
 from backend.model_manager import ModelManager
+from backend import db_query
+from backend import intent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,6 +70,44 @@ async def get_models():
 async def get_checkpoints():
     """返回 results/ 中所有可用的检查点。"""
     return {"checkpoints": model_manager.list_checkpoints()}
+
+
+@app.post("/api/chat")
+async def api_chat(request: Request):
+    """智能业务助手：意图识别 → 工具调用 → 数据库查询。
+
+    请求体：
+        {"question": "8 号项目现在什么状态？"}
+
+    返回：
+        {"intent": {"tool": ..., "parameters": {...}}, "result": {...}}
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="请求体必须是有效的JSON")
+
+    question = (data.get("question") or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="请输入问题")
+
+    # 模型优先，失败降级为正则兜底；模型未加载时仅用规则
+    model = tokenizer = None
+    try:
+        # 优先用 wenda 微调模型做意图识别；未训练则退回学生模型；均不可用则仅用规则
+        model = model_manager.wenda or model_manager.student
+        tokenizer = model_manager.tokenizer
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("意图识别模型不可用，仅用规则兜底: %s", exc)
+
+    tool_call = intent.detect_intent(question, model=model, tokenizer=tokenizer)
+    tool = tool_call.get("tool")
+    if not tool:
+        return {"intent": tool_call,
+                "result": {"error": "无法识别意图，请补充项目编号、设备编号或维保时间"}}
+
+    result = db_query.execute_tool(tool, tool_call.get("parameters") or {})
+    return {"intent": tool_call, "result": result}
 
 
 @app.post("/api/generate")

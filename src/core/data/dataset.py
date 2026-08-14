@@ -4,24 +4,32 @@
 input_ids、attention_mask 和 labels 张量。
 """
 
+import json
+
 import torch
 from torch.utils.data import Dataset
 from typing import Dict, List, Any
 
 
 class SFTDataset(Dataset):
-    """监督微调数据集。"""
+    """监督微调数据集。
+
+    api_mode=True 时，按智能业务助手的格式处理数据：output 为工具调用
+    JSON（dict），序列化为文本并使用 API_SYSTEM_PROMPT。
+    """
 
     def __init__(
         self,
         data: List[Dict[str, Any]],
         tokenizer: Any,
         max_seq_len: int,
+        api_mode: bool = False,
     ) -> None:
         super().__init__()
         self.data = data
         self.tokenizer = tokenizer
         self.max_seq_len = max_seq_len
+        self.api_mode = api_mode
         self.padding_id = tokenizer.pad_token_id
 
     def __len__(self) -> int:
@@ -43,9 +51,18 @@ class SFTDataset(Dataset):
             answer_text = line.get("answer", "")
             system_prompt = None
 
-        from config_shared import SYSTEM_PROMPT
-        if system_prompt is None:
-            system_prompt = SYSTEM_PROMPT
+        if self.api_mode:
+            from config_shared import API_SYSTEM_PROMPT
+            if isinstance(answer_text, dict):
+                answer_text = json.dumps(answer_text, ensure_ascii=False)
+            system_prompt = API_SYSTEM_PROMPT
+            # api_mode 的用户消息就是问题本身，任务指令统一放在 system prompt 里，
+            # 与推理时的 make_api_prompt 保持一致（避免训练/推理分布不一致）
+            user_msg = line.get("input", "")
+        else:
+            from config_shared import SYSTEM_PROMPT
+            if system_prompt is None:
+                system_prompt = SYSTEM_PROMPT
 
         # 构建完整对话（含 assistant reply + <|im_end|>）
         messages = [

@@ -37,6 +37,8 @@ class ModelManager:
         self._checkpoints: Dict[str, object] = {}  # name → model
         self._tokenizer = None
         self._loaded = False
+        self._wenda = None
+        self._wenda_checked = False
 
     # ------------------------------------------------------------------
     # 加载
@@ -75,6 +77,33 @@ class ModelManager:
         if self._tokenizer is None:
             self._tokenizer = self._loader.load_tokenizer()
         return self._tokenizer
+
+    @property
+    def wenda(self):
+        """智能问答（wenda）微调模型；未训练或不存在时返回 None。"""
+        if not self._wenda_checked:
+            self._wenda_checked = True
+            self._wenda = self._load_wenda_model()
+        return self._wenda
+
+    def _load_wenda_model(self):
+        """加载最新的 wenda 合并模型（outputs/merged/wenda/ 下 mtime 最新的）。"""
+        wenda_root = os.path.join(PROJECT_ROOT, "outputs", "merged", "wenda")
+        if not os.path.isdir(wenda_root):
+            return None
+        candidates = [
+            os.path.join(wenda_root, name)
+            for name in os.listdir(wenda_root)
+            if os.path.isdir(os.path.join(wenda_root, name))
+            and os.path.exists(os.path.join(wenda_root, name, "config.json"))
+        ]
+        if not candidates:
+            return None
+        candidates.sort(key=os.path.getmtime, reverse=True)
+        logger.info("加载 wenda 模型: %s", candidates[0])
+        model = self._loader.load_merged(candidates[0])
+        model.eval()
+        return model
 
     # ------------------------------------------------------------------
     # 合并模型管理（从 merged/ 直接加载，无需 LoRA 合并，更快）

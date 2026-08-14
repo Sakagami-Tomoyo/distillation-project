@@ -26,7 +26,8 @@ from config_shared import (
 from core.train.config import LORA_CONFIG, TRAINING_ARGS, DATASET_CONFIG
 from core.data.dataset import SFTDataset
 from core.data.preprocessing import load_jsonl
-from core.train.trainer import KGTrainer
+from core.train.kd_trainer import KDTrainer
+from core.train.sft_trainer import SFTTrainer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,7 +44,7 @@ def main() -> None:
                         help="基座模型路径")
     mode_group = parser.add_mutually_exclusive_group(required=True)
     mode_group.add_argument("--sft", action="store_true",
-                        help="SFT 模式：纯 CE 微调，不加载教师")
+                        help="SFT 模式：前向 KL（标准答案‖模型）≡ 交叉熵，不加载教师")
     mode_group.add_argument("--distill", action="store_true",
                         help="蒸馏模式：KL + CE + Feature Loss，需加载教师")
     parser.add_argument("--temp-max", type=float, default=3.0,
@@ -62,13 +63,15 @@ def main() -> None:
                         help="自定义训练数据路径（默认 data/train_data/train.jsonl）")
     parser.add_argument("--eval-data", type=str, default=None,
                         help="自定义评估数据路径（默认 data/train_data/test.jsonl）")
+    parser.add_argument("--api-mode", action="store_true",
+                        help="智能问答（意图识别）模式：训练 data/apidata 数据，输出工具调用 JSON（配合 --sft 使用）")
     args = parser.parse_args()
 
     if not __import__("config_shared").HF_TOKEN:
         logger.warning("HF_TOKEN is not set.")
 
     # ------------------------------------------------------------------
-    # 1. 加载基座模型
+    # 1. 加载模型
     # ------------------------------------------------------------------
     base_model_path = args.base_model or MODEL_PATHS["student"]
 
@@ -124,7 +127,7 @@ def main() -> None:
         tokenizer.pad_token = tokenizer.eos_token
 
     # ------------------------------------------------------------------
-    # 3. 加载教师模型（SFT 模式跳过）
+    # 3. 加载教师模型
     # ------------------------------------------------------------------
     if args.sft:
         teacher_model = None
@@ -168,6 +171,8 @@ def main() -> None:
     # ------------------------------------------------------------------
     timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
     mode = "sft" if args.sft else "distillation"
+    if args.api_mode:
+        mode = "wenda"
 
     train_kwargs = {k: v for k, v in TRAINING_ARGS.items() if k not in ("output_dir", "logging_dir")}
     if args.epochs is not None:
@@ -183,8 +188,13 @@ def main() -> None:
     # ------------------------------------------------------------------
     # 6. 数据集
     # ------------------------------------------------------------------
-    train_path = args.train_data or DATA_PATHS["train"]
-    test_path = args.eval_data or DATA_PATHS["test"]
+    if args.api_mode:
+        apidata_dir = os.path.join(PROJECT_ROOT, "data", "apidata")
+        train_path = args.train_data or os.path.join(apidata_dir, "intent_train.jsonl")
+        test_path = args.eval_data or os.path.join(apidata_dir, "intent_test.jsonl")
+    else:
+        train_path = args.train_data or DATA_PATHS["train"]
+        test_path = args.eval_data or DATA_PATHS["test"]
     logger.info("Loading data: train=%s, test=%s", train_path, test_path)
     train_data = load_jsonl(train_path)
     test_data = load_jsonl(test_path)
@@ -199,38 +209,48 @@ def main() -> None:
         logger.info("Train: %d samples, Test: %d samples", len(train_data), len(test_data))
 
     train_dataset = SFTDataset(train_data, tokenizer=tokenizer,
-                               max_seq_len=DATASET_CONFIG["max_seq_len"])
+                               max_seq_len=DATASET_CONFIG["max_seq_len"],
+                               api_mode=args.api_mode)
     eval_dataset = SFTDataset(test_data, tokenizer=tokenizer,
-                              max_seq_len=DATASET_CONFIG["max_seq_len"])
+                              max_seq_len=DATASET_CONFIG["max_seq_len"],
+                              api_mode=args.api_mode)
 
     data_collator = DefaultDataCollator()
 
     # ------------------------------------------------------------------
     # 7. 训练器
     # ------------------------------------------------------------------
-    trainer = KGTrainer(
-        model=model,
-        teacher_model=teacher_model,
-        if_use_entropy=not args.sft,
-        args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-        data_collator=data_collator,
-        feature_loss_weight=0.0 if (args.sft or args.no_feature) else 0.05,
-        temp_max=1.0 if args.sft else args.temp_max,
-        temp_min=1.0 if args.sft else args.temp_min,
-        lambda_max=0.0 if args.sft else 0.5,
-        lambda_min=0.0 if args.sft else 0.1,
-    )
-    trainer.proc = tokenizer
-    trainer.mode = mode
     if args.sft:
+        # SFTTrainer：前向 KL（标准答案‖模型）≡ 交叉熵，无教师、无特征蒸馏、无 λ/T 调度
+        trainer = SFTTrainer(
+            model=model,
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            data_collator=data_collator,
+        )
         model_type = "教师(3B)" if is_teacher else "学生(0.5B)"
-        logger.info("SFT 模式 [%s]：纯 CE 训练（无教师、无 KL、无特征蒸馏）", model_type)
+        logger.info("SFT 模式 [%s]：前向 KL（标准答案‖模型）≡ 交叉熵，无教师、无特征蒸馏", model_type)
     else:
+        # KDTrainer：skewed-FKL + CE + 特征蒸馏 + 动态 λ/T（必须有教师）
+        trainer = KDTrainer(
+            model=model,
+            teacher_model=teacher_model,
+            if_use_entropy=True,
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            data_collator=data_collator,
+            feature_loss_weight=0.0 if args.no_feature else 0.05,
+            temp_max=args.temp_max,
+            temp_min=args.temp_min,
+            lambda_max=0.5,
+            lambda_min=0.1,
+        )
         logger.info("KD 模式：temp %.1f→%.1f  λ=%.2f→%.2f  feature_loss=%.2f",
                     trainer.temp_max, trainer.temp_min, trainer.lambda_max, trainer.lambda_min,
                     trainer.feature_loss_weight)
+    trainer.proc = tokenizer
     logger.info("TensorBoard: %s", training_args.logging_dir)
     if args.checkpoint:
         ckpt_path = args.checkpoint
@@ -241,7 +261,7 @@ def main() -> None:
     else:
         ckpt_path = None
 
-    prefix_map = {"sft": "sft", "distillation": "distillation"}
+    prefix_map = {"sft": "sft", "distillation": "distillation", "wenda": "wenda"}
     prefix = prefix_map.get(mode, mode)
 
     # 设置手动检查点触发器
@@ -269,7 +289,7 @@ def main() -> None:
     try:
         trainer.train(resume_from_checkpoint=ckpt_path)
     except KeyboardInterrupt:
-        logger.info("\n⚠ Ctrl+C — 正在保存中断检查点...")
+        logger.info("\nCtrl+C — 正在保存中断检查点...")
         _save_interrupt()
         return
 

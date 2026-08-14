@@ -235,7 +235,10 @@ function App() {
   return (
     <div className="app-container">
       <header className="header">
-        <h1>📝 高考题模型对比</h1>
+        <div className="nav-bar">
+          <h1>📝 高考题模型对比</h1>
+          <a className="nav-link" href="#/chat">🤖 智能业务助手 →</a>
+        </div>
         <p>对比学生、教师、各检查点模型对高考题的回答</p>
       </header>
 

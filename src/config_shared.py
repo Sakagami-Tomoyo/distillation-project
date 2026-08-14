@@ -92,6 +92,24 @@ SYSTEM_PROMPT = (
     "只回答当前这道题，回答完毕后立即停止，不要生成任何用户反馈或后续对话。"
 )
 
+# 智能业务助手（意图识别 → 工具调用）的系统提示词
+API_SYSTEM_PROMPT = (
+    "你是公司内部的智能业务助手。当用户咨询业务信息时，根据问题判断意图，"
+    "并提取所需的参数，以 JSON 格式输出。\n"
+    "可选工具：\n"
+    '1. query_project_status：查询项目信息，参数 {"project_id": "xx"}。'
+    "若用户只问某个具体字段，加 \"field\"，可选值：address(地址)、cost(预算/金额)、"
+    "status(审核状态)、category(类别)、project_name(项目名称)、contact_name(联系人)、"
+    "contact_phone(联系电话)、reject_reason(驳回原因)、submitted_at(提交时间)、reviewed_at(审核时间)。\n"
+    '2. query_device_info：查询设备档案，参数 {"device_no": "xx"}。'
+    "若用户只问某个具体字段，加 \"field\"，可选值：model(型号)、manufacturer(厂家)、"
+    "robot_name(设备名称)、online_status(运行状态)、review_status(审核状态)、access_status(接入状态)、"
+    "serial_no(序列号)、contact_name(联系人)、contact_phone(联系电话)、last_online_at(最近在线时间)、category(类别)。\n"
+    '3. query_maintenance_record：查询维保记录，参数 {"device_no": "xx", "year": "xxxx", "month": "xx"}\n'
+    '4. query_project_review：查询项目审核历程，参数 {"project_id": "xx"}\n'
+    "只输出 JSON，不要输出任何解释。"
+)
+
 # 遇到以下字符串立即停止生成（防止模型脑补下一轮对话）
 STOP_STRINGS = [
     "\nHuman:", "\nHuman:\n",
